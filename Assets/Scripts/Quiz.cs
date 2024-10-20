@@ -18,20 +18,34 @@ public class Quiz : MonoBehaviour
     [SerializeField] Sprite winSprite;
     [SerializeField] Timer timer;
     [SerializeField] TextMeshProUGUI scoreTextContainer;
+    Score score;
     bool hasAnsweredEarly;
+    [SerializeField] Slider progressBar;
+    public bool isComplete = false;
 
+    void Awake()
+    {
+        score = FindObjectOfType<Score>();
+        timer.GetComponent<Timer>();
+    }
 
     void Start()
     {
+        progressBar.maxValue = questions.Count;
         GetRandomQuestion();
         DisplayQuestion();
-        timer.GetComponent<Timer>();
     }
 
     void Update()
     {
         if(timer.loadNextQuestion)
         {
+            if(progressBar.value == progressBar.maxValue)
+            {
+                isComplete = true;
+                return;
+            }
+            
             hasAnsweredEarly = false;
             GetNextQuestion();
             timer.loadNextQuestion = false;
@@ -46,6 +60,9 @@ public class Quiz : MonoBehaviour
     {
         correctAnswerIndex = currentQuestion.GetCorrectAnswerIndex();
         questionTextContainer.text = currentQuestion.GetQuestion();
+        score.IncrementQuestionsSeen();
+        progressBar.value++;
+
 
         for (int i = 0; i < answerButtons.Length; i++)
         {
@@ -77,8 +94,7 @@ public class Quiz : MonoBehaviour
     }
 
     public void OnAnswerSelected(int index)
-    {
-        
+    {        
         hasAnsweredEarly = true;
         Image buttonImage;
         if (index == correctAnswerIndex)
@@ -86,6 +102,7 @@ public class Quiz : MonoBehaviour
             questionTextContainer.text = "Correct!";
             buttonImage = answerButtons[index].GetComponent<Image>();
             buttonImage.sprite = winSprite;
+            score.IncrementCorrectAnswers();
         }
         else
         {
@@ -95,6 +112,12 @@ public class Quiz : MonoBehaviour
         }
         SetAnswerButtonsState(false);
         timer.CancelTimer();
+        scoreTextContainer.text = $"Score: {score.CalculateScore()}%";
+        
+        if(progressBar.value == progressBar.maxValue)
+        {
+            isComplete = true;
+        }
     }
 
     private void SetAnswerButtonsState(bool state)
@@ -121,5 +144,6 @@ public class Quiz : MonoBehaviour
         Image buttonImage = answerButtons[correctAnswerIndex].GetComponent<Image>();
         buttonImage.sprite = winSprite;
         SetAnswerButtonsState(false);
+        scoreTextContainer.text = $"Score: {score.CalculateScore()}%";
     }
 }
